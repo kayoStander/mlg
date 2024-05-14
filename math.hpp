@@ -7,16 +7,24 @@
 namespace {
 class Vector {
 public:
-  // Vector(const Vector &) = delete;
-  // Vector &operator=(const Vector &) = delete;
-  // Vector(const Vector &&) = delete;
-  // Vector &operator=(const Vector &&) = delete;
+
+  Vector(const Vector &) = delete;
+  Vector &operator=(const Vector &) = delete;
+  Vector(const Vector &&) = delete;
+  Vector &operator=(const Vector &&) = delete;
+
   virtual void etc() {}
 
 private:
 };
 class Matrix {
 public:
+
+  Matrix(const Matrix &) = delete;
+  Matrix &operator=(const Matrix &) = delete;
+  Matrix(const Matrix &&) = delete;
+  Matrix &operator=(const Matrix &&) = delete;
+
   virtual void etc() {}
 
 private:
