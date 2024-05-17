@@ -14,6 +14,7 @@ using c_int32 = const int32_t;
 template <typename T> class Vector {
 public:
   virtual void sqrt() {};
+  virtual void pow(int8 scalar) {};
   virtual void operator+(T value) {};
   virtual void operator-(T value) {};
   virtual void operator*(T scalar) {};
@@ -62,9 +63,13 @@ public:
   Vec2(const T x, const T y) : x(x), y(y) {}
   Vec2(const Vec2<T> &xy) : x(xy.x), y(xy.y) {}
 
+  void pow(int8 scalar) {
+    x = std::pow(static_cast<double>(x), scalar);
+    y = std::pow(static_cast<double>(y), scalar);
+  }
   void sqrt() {
-    x = static_cast<T>(std::sqrt(x));
-    y = static_cast<T>(std::sqrt(y));
+    x = (x <= 0 ? 0 : static_cast<T>(std::sqrt(x)));
+    y = (y <= 0 ? 0 : static_cast<T>(std::sqrt(y)));
   }
   void operator+(T value) {
     x += value;
@@ -126,10 +131,15 @@ public:
   Vec3(const Vec2<T> &xy, const T z) : x(xy.x), y(xy.y), z(z) {}
   Vec3(const T x, const Vec2<T> &yz) : x(x), y(yz.x), z(yz.y) {}
 
+  void pow(int8 scalar) {
+    x = std::pow(static_cast<double>(x), scalar);
+    y = std::pow(static_cast<double>(y), scalar);
+    z = std::pow(static_cast<double>(z), scalar);
+  }
   void sqrt() {
-    x = static_cast<T>(std::sqrt(x));
-    y = static_cast<T>(std::sqrt(y));
-    z = static_cast<T>(std::sqrt(z));
+    x = (x <= 0 ? 0 : static_cast<T>(std::sqrt(x)));
+    y = (y <= 0 ? 0 : static_cast<T>(std::sqrt(y)));
+    z = (z <= 0 ? 0 : static_cast<T>(std::sqrt(z)));
   }
   void operator+(T value) {
     x += value;
@@ -209,11 +219,17 @@ public:
   Vec4(const Vec3<T> &xyz, const T w) : x(xyz.x), y(xyz.y), z(xyz.z), w(w) {}
   Vec4(const T x, const Vec3<T> &yzw) : x(x), y(yzw.y), z(yzw.z), w(yzw.w) {}
 
+  void pow(int8 scalar) {
+    x = std::pow(static_cast<double>(x), scalar);
+    y = std::pow(static_cast<double>(y), scalar);
+    z = std::pow(static_cast<double>(z), scalar);
+    w = std::pow(static_cast<double>(w), scalar);
+  }
   void sqrt() {
-    x = static_cast<T>(std::sqrt(x));
-    y = static_cast<T>(std::sqrt(y));
-    z = static_cast<T>(std::sqrt(z));
-    w = static_cast<T>(std::sqrt(w));
+    x = (x <= 0 ? 0 : static_cast<T>(std::sqrt(x)));
+    y = (y <= 0 ? 0 : static_cast<T>(std::sqrt(y)));
+    z = (z <= 0 ? 0 : static_cast<T>(std::sqrt(z)));
+    w = (w <= 0 ? 0 : static_cast<T>(std::sqrt(w)));
   }
   void operator+(T value) {
     x += value;
@@ -255,7 +271,6 @@ public:
     }
     return static_cast<T>(0.0);
   }
-
   const T operator[](int index) const {
     switch (index) {
     case 0:
@@ -299,41 +314,49 @@ public:
     constructorBLOCK(static_cast<T>(0.0), static_cast<T>(0.0),
                      static_cast<T>(0.0), static_cast<T>(0.0));
   }
-  Mat4x4(T x, T y, T z, T w,
-         MAT4CONSTRUCTTYPE ConstructType = MAT4CONSTRUCTTYPE::DIAGONAL) {
+  Mat4x4(T xyzw, MAT4CONSTRUCTTYPE ConstructType = DIAGONAL) {
     switch (ConstructType) {
-    case MAT4CONSTRUCTTYPE::DIAGONAL:
+    case DIAGONAL:
+      ConstructorDIAGONAL(xyzw, xyzw, xyzw, xyzw);
+      break;
+    case BLOCK:
+      ConstructorBLOCK(xyzw, xyzw, xyzw, xyzw);
+      break;
+    case VEC4:
+      ConstructorVEC4(xyzw, xyzw, xyzw, xyzw);
+      break;
+    }
+  }
+  Mat4x4(T x, T y, T z, T w, MAT4CONSTRUCTTYPE ConstructType = DIAGONAL) {
+    switch (ConstructType) {
+    case DIAGONAL:
       ConstructorDIAGONAL(x, y, z, w);
       break;
-    case MAT4CONSTRUCTTYPE::BLOCK:
+    case BLOCK:
       ConstructorBLOCK(x, y, z, w);
       break;
     }
   }
-  Mat4x4(Vec4<T> &xyzw,
-         MAT4CONSTRUCTTYPE ConstructType = MAT4CONSTRUCTTYPE::DIAGONAL) {
+  Mat4x4(Vec4<T> &xyzw, MAT4CONSTRUCTTYPE ConstructType = DIAGONAL) {
     switch (ConstructType) {
-    case MAT4CONSTRUCTTYPE::DIAGONAL:
-      ConstructorDIAGONAL(xyzw.x, xyzw.y, xyzw.z, xyzw.w);
+    case DIAGONAL:
+      ConstructorDIAGONAL(xyzw.x);
       break;
-    case MAT4CONSTRUCTTYPE::BLOCK:
+    case BLOCK:
       ConstructorBLOCK(xyzw.x, xyzw.y, xyzw.z, xyzw.w);
-      break;
-    case MAT4CONSTRUCTTYPE::VEC4:
-      ConstructorVEC4(xyzw.x, xyzw.y, xyzw.z, xyzw.w);
       break;
     }
   }
   Mat4x4(Vec4<T> x, Vec4<T> y, Vec4<T> z, Vec4<T> w,
-         MAT4CONSTRUCTTYPE ConstructType = MAT4CONSTRUCTTYPE::DIAGONAL) {
+         MAT4CONSTRUCTTYPE ConstructType = DIAGONAL) {
     switch (ConstructType) {
-    case MAT4CONSTRUCTTYPE::DIAGONAL:
+    case DIAGONAL:
       ConstructorDIAGONAL(x, y, z, w);
       break;
-    case MAT4CONSTRUCTTYPE::BLOCK:
+    case BLOCK:
       ConstructorBLOCK(x, y, z, w);
       break;
-    case MAT4CONSTRUCTTYPE::VEC4:
+    case VEC4:
       ConstructorVEC4(x, y, z, w);
       break;
     }
