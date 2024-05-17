@@ -5,11 +5,19 @@
 #include <cstring>
 
 namespace {
+
+using int8 = int8_t;
+using c_int8 = const int8_t;
+using int32 = int32_t;
+using c_int32 = const int32_t;
+
 template <typename T> class Vector {
 public:
   virtual void sqrt() {};
-  virtual void operator+() {};
-  virtual void operator-() {};
+  virtual void operator+(T value) {};
+  virtual void operator-(T value) {};
+  virtual void operator*(T scalar) {};
+  virtual void operator/(T scalar) {};
   virtual T operator[](int index) { return T(0.0); };
   virtual const T operator[](int index) const { return T(0.0); };
 
@@ -26,13 +34,6 @@ protected:
 } // namespace
 
 namespace Math {
-
-#ifndef NOINTTEMPLATE
-using int8 = int8_t;
-using c_int8 = const int8_t;
-using int32 = int32_t;
-using c_int32 = const int32_t;
-#endif
 
 namespace Constant {
 template <typename T> constexpr T TWOPI() {
@@ -57,6 +58,7 @@ template <typename T> constexpr T GOLDENRATIO() {
 template <typename T> class Vec2 : public Vector<T> {
 public:
   Vec2() : x(static_cast<T>(0.0)), y(static_cast<T>(0.0)) {}
+  Vec2(const T xy) : x(xy), y(xy) {}
   Vec2(const T x, const T y) : x(x), y(y) {}
   Vec2(const Vec2<T> &xy) : x(xy.x), y(xy.y) {}
 
@@ -71,6 +73,14 @@ public:
   void operator-(T value) {
     x -= value;
     y -= value;
+  }
+  void operator*(T scalar) {
+    x *= scalar;
+    y *= scalar;
+  }
+  void operator/(T scalar) {
+    x /= scalar;
+    y /= scalar;
   }
 
   T operator[](int index) {
@@ -110,6 +120,7 @@ public:
   Vec3()
       : x(static_cast<T>(0.0)), y(static_cast<T>(0.0)), z(static_cast<T>(0.0)) {
   }
+  Vec3(const T xyz) : x(xyz), y(xyz), z(xyz) {}
   Vec3(const T x, const T y, const T z) : x(x), y(y), z(z) {}
   Vec3(const Vec3<T> &xyz) : x(xyz.x), y(xyz.y), z(xyz.z) {}
   Vec3(const Vec2<T> &xy, const T z) : x(xy.x), y(xy.y), z(z) {}
@@ -129,6 +140,16 @@ public:
     x -= value;
     y -= value;
     z -= value;
+  }
+  void operator*(T scalar) {
+    x *= scalar;
+    y *= scalar;
+    z *= scalar;
+  }
+  void operator/(T scalar) {
+    x /= scalar;
+    y /= scalar;
+    z /= scalar;
   }
 
   T operator[](int index) {
@@ -176,6 +197,7 @@ public:
   Vec4()
       : x(static_cast<T>(0.0)), y(static_cast<T>(0.0)), z(static_cast<T>(0.0)),
         w(static_cast<T>(0.0)) {}
+  Vec4(const T xyzw) : x(xyzw), y(xyzw), z(xyzw), w(xyzw) {}
   Vec4(const T x, const T y, const T z, const T w) : x(x), y(y), z(z), w(w) {}
   Vec4(const Vec4<T> &xyzw) : x(xyzw.x), y(xyzw.y), z(xyzw.z), w(xyzw.w) {}
   Vec4(const Vec2<T> &xy, const Vec2<T> &zw)
@@ -204,6 +226,18 @@ public:
     y -= value;
     z -= value;
     w -= value;
+  }
+  void operator*(T scalar) {
+    x *= scalar;
+    y *= scalar;
+    z *= scalar;
+    w *= scalar;
+  }
+  void operator/(T scalar) {
+    x /= scalar;
+    y /= scalar;
+    z /= scalar;
+    w /= scalar;
   }
 
   T operator[](int index) {
