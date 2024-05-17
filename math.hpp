@@ -10,8 +10,8 @@ public:
   virtual void sqrt() {};
   virtual void operator+() {};
   virtual void operator-() {};
-  virtual T &operator[](int index) {};
-  virtual const T &operator[](int index) const {};
+  virtual T operator[](int index) { return T(0.0); };
+  virtual const T operator[](int index) const { return T(0.0); };
 
 private:
 protected:
@@ -73,7 +73,7 @@ public:
     y -= value;
   }
 
-  T &operator[](int index) {
+  T operator[](int index) {
     switch (index) {
     case 0:
       return x;
@@ -83,7 +83,7 @@ public:
     return static_cast<T>(0.0);
   }
 
-  const T &operator[](int index) const {
+  const T operator[](int index) const {
     switch (index) {
     case 0:
       return x;
@@ -131,7 +131,7 @@ public:
     z -= value;
   }
 
-  T &operator[](int index) {
+  T operator[](int index) {
     switch (index) {
     case 0:
       return x;
@@ -143,7 +143,7 @@ public:
     return static_cast<T>(0.0);
   }
 
-  const T &operator[](int index) const {
+  const T operator[](int index) const {
     switch (index) {
     case 0:
       return x;
@@ -206,7 +206,7 @@ public:
     w -= value;
   }
 
-  T &operator[](int index) {
+  T operator[](int index) {
     // return index < 4 ? *(T *)((char *)this + sizeof(T)) :
     // static_cast<T>(0.0f);
     switch (index) {
@@ -222,7 +222,7 @@ public:
     return static_cast<T>(0.0);
   }
 
-  const T &operator[](int index) const {
+  const T operator[](int index) const {
     switch (index) {
     case 0:
       return x;
