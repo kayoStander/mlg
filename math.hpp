@@ -4,33 +4,38 @@
 #include <cmath>
 #include <cstring>
 
-namespace {
+#include <stdint.h>
 
-using int8 = int8_t;
-using c_int8 = const int8_t;
-using int32 = int32_t;
-using c_int32 = const int32_t;
+namespace {
 
 template <typename T> class Vector {
 public:
   virtual void sqrt() {};
-  virtual void pow(int8 scalar) {};
-  virtual void operator+(T value) {};
-  virtual void operator-(T value) {};
-  virtual void operator*(T scalar) {};
-  virtual void operator/(T scalar) {};
-  virtual T operator[](int index) { return T(0.0); };
-  virtual const T operator[](int index) const { return T(0.0); };
+  virtual void pow(const int32_t scalar) {};
+  virtual void operator+(const T value) {};
+  virtual void operator-(const T value) {};
+  virtual void operator*(const T scalar) {};
+  virtual void operator/(const T scalar) {};
+  virtual T operator[](const int index) { return T(0.0); };
+  virtual const T operator[](const int index) const { return T(0.0); };
 
 private:
 protected:
   virtual ~Vector(){};
 };
-class Matrix {
+template <typename T> class Matrix {
 public:
+  virtual void sqrt() {};
+  virtual void pow(const int32_t scalar) {};
+  virtual void operator+(const T value) {};
+  virtual void operator-(const T value) {};
+  virtual void operator*(const T scalar) {};
+  virtual void operator/(const T scalar) {};
+
 private:
-protected:
-  virtual ~Matrix(){};
+  virtual void ConstructorDIAGONAL() {};
+  virtual void ConstructorBLOCK() {};
+  virtual void ConstructorVEC4() {};
 };
 } // namespace
 
@@ -63,7 +68,7 @@ public:
   Vec2(const T x, const T y) : x(x), y(y) {}
   Vec2(const Vec2<T> &xy) : x(xy.x), y(xy.y) {}
 
-  void pow(int8 scalar) {
+  void pow(const int32_t scalar) {
     x = std::pow(static_cast<double>(x), scalar);
     y = std::pow(static_cast<double>(y), scalar);
   }
@@ -71,41 +76,41 @@ public:
     x = (x <= 0 ? 0 : static_cast<T>(std::sqrt(x)));
     y = (y <= 0 ? 0 : static_cast<T>(std::sqrt(y)));
   }
-  void operator+(T value) {
+  void operator+(const T value) {
     x += value;
     y += value;
   }
-  void operator-(T value) {
+  void operator-(const T value) {
     x -= value;
     y -= value;
   }
-  void operator*(T scalar) {
+  void operator*(const T scalar) {
     x *= scalar;
     y *= scalar;
   }
-  void operator/(T scalar) {
+  void operator/(const T scalar) {
     x /= scalar;
     y /= scalar;
   }
 
-  T operator[](int index) {
+  T operator[](const int index) {
     switch (index) {
     case 0:
       return x;
     case 1:
       return y;
     }
-    return static_cast<T>(0.0);
+    return nullptr;
   }
 
-  const T operator[](int index) const {
+  const T operator[](const int index) const {
     switch (index) {
     case 0:
       return x;
     case 1:
       return y;
     }
-    return static_cast<T>(0.0);
+    return nullptr;
   }
 
   union {
@@ -131,7 +136,7 @@ public:
   Vec3(const Vec2<T> &xy, const T z) : x(xy.x), y(xy.y), z(z) {}
   Vec3(const T x, const Vec2<T> &yz) : x(x), y(yz.x), z(yz.y) {}
 
-  void pow(int8 scalar) {
+  void pow(const int32_t scalar) {
     x = std::pow(static_cast<double>(x), scalar);
     y = std::pow(static_cast<double>(y), scalar);
     z = std::pow(static_cast<double>(z), scalar);
@@ -141,28 +146,28 @@ public:
     y = (y <= 0 ? 0 : static_cast<T>(std::sqrt(y)));
     z = (z <= 0 ? 0 : static_cast<T>(std::sqrt(z)));
   }
-  void operator+(T value) {
+  void operator+(const T value) {
     x += value;
     y += value;
     z += value;
   }
-  void operator-(T value) {
+  void operator-(const T value) {
     x -= value;
     y -= value;
     z -= value;
   }
-  void operator*(T scalar) {
+  void operator*(const T scalar) {
     x *= scalar;
     y *= scalar;
     z *= scalar;
   }
-  void operator/(T scalar) {
+  void operator/(const T scalar) {
     x /= scalar;
     y /= scalar;
     z /= scalar;
   }
 
-  T operator[](int index) {
+  T operator[](const int index) {
     switch (index) {
     case 0:
       return x;
@@ -171,10 +176,10 @@ public:
     case 2:
       return z;
     }
-    return static_cast<T>(0.0);
+    return nullptr;
   }
 
-  const T operator[](int index) const {
+  const T operator[](const int index) const {
     switch (index) {
     case 0:
       return x;
@@ -183,7 +188,7 @@ public:
     case 2:
       return z;
     }
-    return static_cast<T>(0.0);
+    return nullptr;
   }
 
   union {
@@ -219,7 +224,7 @@ public:
   Vec4(const Vec3<T> &xyz, const T w) : x(xyz.x), y(xyz.y), z(xyz.z), w(w) {}
   Vec4(const T x, const Vec3<T> &yzw) : x(x), y(yzw.y), z(yzw.z), w(yzw.w) {}
 
-  void pow(int8 scalar) {
+  void pow(const int32_t scalar) {
     x = std::pow(static_cast<double>(x), scalar);
     y = std::pow(static_cast<double>(y), scalar);
     z = std::pow(static_cast<double>(z), scalar);
@@ -231,32 +236,32 @@ public:
     z = (z <= 0 ? 0 : static_cast<T>(std::sqrt(z)));
     w = (w <= 0 ? 0 : static_cast<T>(std::sqrt(w)));
   }
-  void operator+(T value) {
+  void operator+(const T value) {
     x += value;
     y += value;
     z += value;
     w += value;
   }
-  void operator-(T value) {
+  void operator-(const T value) {
     x -= value;
     y -= value;
     z -= value;
     w -= value;
   }
-  void operator*(T scalar) {
+  void operator*(const T scalar) {
     x *= scalar;
     y *= scalar;
     z *= scalar;
     w *= scalar;
   }
-  void operator/(T scalar) {
+  void operator/(const T scalar) {
     x /= scalar;
     y /= scalar;
     z /= scalar;
     w /= scalar;
   }
 
-  T operator[](int index) {
+  T operator[](const int index) {
     // return index < 4 ? *(T *)((char *)this + sizeof(T)) :
     // static_cast<T>(0.0f);
     switch (index) {
@@ -271,7 +276,7 @@ public:
     }
     return static_cast<T>(0.0);
   }
-  const T operator[](int index) const {
+  const T operator[](const int index) const {
     switch (index) {
     case 0:
       return x;
@@ -281,7 +286,7 @@ public:
       return z;
     case 3:
       return w;
-    }
+    };
     return static_cast<T>(0.0);
   }
 
@@ -305,80 +310,157 @@ public:
 private:
 };
 
-template <typename T> class Mat4x4 : Matrix {
+template <typename T> class Mat4x4 : public Matrix<T> {
 
-  enum MAT4CONSTRUCTTYPE { DIAGONAL = 0, BLOCK = 1, VEC4 = 2 };
+  enum Constructor {
+    MAT4X4DIAGONAL = 0,
+    MAT4X4VEC4 = 1,
+    MAT4X4BLOCK = 2,
+  };
 
 public:
-  Mat4x4() {
-    constructorBLOCK(static_cast<T>(0.0), static_cast<T>(0.0),
-                     static_cast<T>(0.0), static_cast<T>(0.0));
+  Mat4x4() { ConstructorBLOCK(); }
+  Mat4x4(const T xyzw, const Constructor type = MAT4X4DIAGONAL) {
+    switch (type) {
+    case MAT4X4DIAGONAL:
+      ConstructorDIAGONAL(xyzw);
+      break;
+    case MAT4X4VEC4:
+      ConstructorVEC4(xyzw);
+      break;
+    case MAT4X4BLOCK:
+      ConstructorBLOCK(xyzw);
+    };
   }
-  Mat4x4(T xyzw, MAT4CONSTRUCTTYPE ConstructType = DIAGONAL) {
-    switch (ConstructType) {
-    case DIAGONAL:
-      ConstructorDIAGONAL(xyzw, xyzw, xyzw, xyzw);
-      break;
-    case BLOCK:
-      ConstructorBLOCK(xyzw, xyzw, xyzw, xyzw);
-      break;
-    case VEC4:
-      ConstructorVEC4(xyzw, xyzw, xyzw, xyzw);
-      break;
-    }
-  }
-  Mat4x4(T x, T y, T z, T w, MAT4CONSTRUCTTYPE ConstructType = DIAGONAL) {
-    switch (ConstructType) {
-    case DIAGONAL:
+  Mat4x4(const T x, const T y, const T z, const T w,
+         const Constructor type = MAT4X4DIAGONAL) {
+    switch (type) {
+    case MAT4X4DIAGONAL:
       ConstructorDIAGONAL(x, y, z, w);
       break;
-    case BLOCK:
-      ConstructorBLOCK(x, y, z, w);
-      break;
-    }
-  }
-  Mat4x4(Vec4<T> &xyzw, MAT4CONSTRUCTTYPE ConstructType = DIAGONAL) {
-    switch (ConstructType) {
-    case DIAGONAL:
-      ConstructorDIAGONAL(xyzw.x);
-      break;
-    case BLOCK:
-      ConstructorBLOCK(xyzw.x, xyzw.y, xyzw.z, xyzw.w);
-      break;
-    }
-  }
-  Mat4x4(Vec4<T> x, Vec4<T> y, Vec4<T> z, Vec4<T> w,
-         MAT4CONSTRUCTTYPE ConstructType = DIAGONAL) {
-    switch (ConstructType) {
-    case DIAGONAL:
-      ConstructorDIAGONAL(x, y, z, w);
-      break;
-    case BLOCK:
-      ConstructorBLOCK(x, y, z, w);
-      break;
-    case VEC4:
+    case MAT4X4VEC4:
       ConstructorVEC4(x, y, z, w);
       break;
-    }
+    case MAT4X4BLOCK:
+      ConstructorBLOCK(x, y, z, w);
+    };
+  }
+  Mat4x4(const Vec4<T> xyzw, const Constructor type = MAT4X4DIAGONAL) {
+    switch (type) {
+    case MAT4X4DIAGONAL:
+      ConstructorDIAGONAL(xyzw);
+      break;
+    case MAT4X4VEC4:
+      ConstructorVEC4(xyzw);
+      break;
+    case MAT4X4BLOCK:
+      ConstructorBLOCK(xyzw);
+    };
+  }
+  Mat4x4(const Vec3<T> xyz, const T w,
+         const Constructor type = MAT4X4DIAGONAL) {
+    switch (type) {
+    case MAT4X4DIAGONAL:
+      ConstructorDIAGONAL(xyz.x, xyz.y, xyz.z, w);
+      break;
+    case MAT4X4VEC4:
+      ConstructorVEC4(xyz.x, xyz.y, xyz.z, w);
+      break;
+    case MAT4X4BLOCK:
+      ConstructorBLOCK(xyz.x, xyz.y, xyz.z, w);
+    };
+  }
+  Mat4x4(const Vec2<T> xy, const Vec2<T> zw,
+         const Constructor type = MAT4X4DIAGONAL) {
+    switch (type) {
+    case MAT4X4DIAGONAL:
+      ConstructorDIAGONAL(xy.x, xy.y, zw.z, zw.w);
+      break;
+    case MAT4X4VEC4:
+      ConstructorVEC4(xy.x, xy.y, zw.z, zw.w);
+      break;
+    case MAT4X4BLOCK:
+      ConstructorBLOCK(xy.x, xy.y, zw.z, zw.w);
+    };
+  }
+  Mat4x4(const Vec2<T> xy, const T z, const T w,
+         const Constructor type = MAT4X4DIAGONAL) {
+    switch (type) {
+    case MAT4X4DIAGONAL:
+      ConstructorDIAGONAL(xy.x, xy.y, z, w);
+      break;
+    case MAT4X4VEC4:
+      ConstructorVEC4(xy.x, xy.y, z, w);
+      break;
+    case MAT4X4BLOCK:
+      ConstructorBLOCK(xy.x, xy.y, z, w);
+    };
   }
 
-  T *operator[](int index) { return mat4[index]; }
+  void sqrt() {
+    for (int8_t i = 0; i < 4; i++) {
+      for (int8_t j = 0; j < 4; j++) {
+        mat4[i][j] = (mat4[i][j] <= 0 ? 0 : std::sqrt(mat4[i][j]));
+      }
+    }
+  };
+  void pow(const int32_t scalar) {
+    for (uint8_t i = 0; i < 4; i++) {
+      for (uint8_t j = 0; j < 4; j++) {
+        mat4[i][j] = std::pow(mat4[i][j], scalar);
+      }
+    }
+  };
+  void operator+(const T value) {
+    for (uint8_t i = 0; i < 4; i++) {
+      for (uint8_t j = 0; j < 4; j++) {
+        mat4[i][j] += value;
+      }
+    }
+  };
+  void operator-(const T value) {
+    for (uint8_t i = 0; i < 4; i++) {
+      for (uint8_t j = 0; j < 4; j++) {
+        mat4[i][j] -= value;
+      }
+    }
+  };
+  void operator*(const T scalar) {
+    for (uint8_t i = 0; i < 4; i++) {
+      for (uint8_t j = 0; j < 4; j++) {
+        mat4[i][j] *= scalar;
+      }
+    }
+  };
+  void operator/(const T scalar) {
+    for (uint8_t i = 0; i < 4; i++) {
+      for (uint8_t j = 0; j < 4; j++) {
+        mat4[i][j] /= scalar;
+      }
+    }
+  };
 
   union {
     struct {
       T mat4[4][4];
     };
     struct {
-      Vec4<T> x;
-      Vec4<T> y;
-      Vec4<T> z;
-      Vec4<T> w;
+      T xx, xy, xz, xw;
+      T yx, yy, yz, yw;
+      T zx, zy, zz, zw;
+      T wx, wy, wz, ww;
+    };
+    struct {
+      Vec4<T> &VecX;
+      Vec4<T> &VecY;
+      Vec4<T> &VecZ;
+      Vec4<T> &VecW;
     };
   };
 
 private:
   void ConstructorVEC4(Vec4<T> x, Vec4<T> y, Vec4<T> z, Vec4<T> w) {
-    for (int8 i = 0; i < 4; i++) {
+    for (uint8_t i = 0; i < 4; i++) {
       mat4[0][i] = x[i];
       mat4[1][i] = y[i];
       mat4[2][i] = z[i];
@@ -386,7 +468,7 @@ private:
     }
   }
   void ConstructorVEC4(Vec4<T> xyzw) {
-    for (int8 i = 0; i < 4; i++) {
+    for (uint8_t i = 0; i < 4; i++) {
       mat4[0][i] = xyzw.x;
       mat4[1][i] = xyzw.y;
       mat4[2][i] = xyzw.z;
@@ -394,7 +476,7 @@ private:
     }
   }
   void ConstructorVEC4(T x, T y, T z, T w) {
-    for (int8 i = 0; i < 4; i++) {
+    for (uint8_t i = 0; i < 4; i++) {
       mat4[0][i] = x;
       mat4[1][i] = y;
       mat4[2][i] = z;
@@ -402,9 +484,16 @@ private:
     }
   }
 
+  void ConstructorBLOCK() {
+    for (uint8_t i = 0; i < 4; i++) {
+      for (uint8_t j = 0; j < 4; j++) {
+        mat4[i][j] = 0;
+      }
+    }
+  }
   void ConstructorBLOCK(Vec4<T> xyzw) {
-    for (int8 i = 0; i < 4; i++) {
-      for (int8 j = 0; j < 4; j++) {
+    for (uint8_t i = 0; i < 4; i++) {
+      for (uint8_t j = 0; j < 4; j++) {
         mat4[i][j] = (j == 0)   ? xyzw.x
                      : (j == 1) ? xyzw.y
                      : (j == 2) ? xyzw.z
@@ -413,23 +502,30 @@ private:
     }
   }
   void ConstructorBLOCK(Vec4<T> x, Vec4<T> y, Vec4<T> z, Vec4<T> w) {
-    for (int8 i = 0; i < 4; i++) {
-      for (int8 j = 0; j < 4; j++) {
+    for (uint8_t i = 0; i < 4; i++) {
+      for (uint8_t j = 0; j < 4; j++) {
         mat4[i][j] = (j == 0) ? x.x : (j == 1) ? y.y : (j == 2) ? z.z : w.w;
       }
     }
   }
   void ConstructorBLOCK(T x, T y, T z, T w) {
-    for (int8 i = 0; i < 4; i++) {
-      for (int8 j = 0; j < 4; j++) {
+    for (uint8_t i = 0; i < 4; i++) {
+      for (uint8_t j = 0; j < 4; j++) {
         mat4[i][j] = (j == 0) ? x : (j == 1) ? y : (j == 2) ? z : w;
       }
     }
   }
 
+  void ConstructorDIAGONAL(T xyzw) {
+    for (uint8_t i = 0; i < 4; i++) {
+      for (uint8_t j = 0; j < 4; j++) {
+        mat4[i][j] = (i == j) ? xyzw : 0;
+      }
+    }
+  }
   void ConstructorDIAGONAL(Vec4<T> x, Vec4<T> y, Vec4<T> z, Vec4<T> w) {
-    for (int8 i = 0; i < 4; i++) {
-      for (int8 j = 0; j < 4; j++) {
+    for (uint8_t i = 0; i < 4; i++) {
+      for (uint8_t j = 0; j < 4; j++) {
         if (i == j) {
           mat4[i][j] = (i == 0) ? x.x : (i == 1) ? y.y : (i == 2) ? z.z : w.w;
         } else {
@@ -439,8 +535,8 @@ private:
     }
   }
   void ConstructorDIAGONAL(Vec4<T> x) {
-    for (int8 i = 0; i < 4; i++) {
-      for (int8 j = 0; j < 4; j++) {
+    for (uint8_t i = 0; i < 4; i++) {
+      for (uint8_t j = 0; j < 4; j++) {
         if (i == j) {
           mat4[i][j] = (i == 0) ? x.x : (i == 1) ? x.y : (i == 2) ? x.z : x.w;
         } else {
@@ -450,8 +546,8 @@ private:
     }
   }
   void ConstructorDIAGONAL(T x, T y, T z, T w) {
-    for (int8 i = 0; i < 4; i++) {
-      for (int8 j = 0; j < 4; j++) {
+    for (uint8_t i = 0; i < 4; i++) {
+      for (uint8_t j = 0; j < 4; j++) {
         if (i == j) {
           mat4[i][j] = (i == 0) ? x : (i == 1) ? y : (i == 2) ? z : w;
         } else {
@@ -471,7 +567,7 @@ template <typename T, typename S = float> constexpr T *lerp(T a, T b, S steps) {
   float af = static_cast<float>(a);
   float bf = static_cast<float>(b);
 
-  for (int32 n = 1; n <= steps; n++) {
+  for (uint32_t n = 1; n <= steps; n++) {
     float stepSize = static_cast<float>(n) / static_cast<float>(steps);
     results[n - 1] = static_cast<T>(lerp(af, bf, stepSize));
   }
