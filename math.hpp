@@ -1,42 +1,28 @@
 #pragma once
 
+/////////////////////////////////
+
+#include <cassert>
 #include <cctype>
 #include <cmath>
 #include <cstring>
-
-#include <cassert>
-#include <iostream>
+#include <stdexcept>
 #include <stdint.h>
 #include <type_traits>
 #include <utility>
 
-namespace {
-
-#ifdef MLGNOASSERT
-constexpr bool NOASSERT = true;
-#else
-constexpr bool NOASSERT = false;
+#if (MLGDOCUMENT)
+#include "mlg.document.hpp"
 #endif
 
-/*#ifdef MLGNOWORLD
-constexpr bool WORLD = false;
-#else
-constexpr bool WORLD = true;
-#endif*/
+/////////////////////////////////
 
-template <typename T> struct HasMember {
-private:
-  typedef char True[1];
-  typedef char False[2];
+namespace {
 
-  template <typename C> static True &test(decltype(&C::mat));
-  template <typename C> static True &test(decltype(&C::x)); // not tested yet
-
-  template <typename C> static False &test(...);
-
-public:
-  static constexpr bool Value = sizeof(test<T>(0)) == sizeof(True);
-};
+template <typename T, typename = void> struct HasMember : std::false_type {};
+template <typename T>
+struct HasMember<T, std::void_t<decltype(std::declval<T>().mat)>>
+    : std::true_type {};
 
 template <typename T> class Vector {
 public:
@@ -66,12 +52,11 @@ public:
   virtual const T Determinant() const { return T(0.0); };
 
   // bool world = true;
-
 private:
 protected:
   template <typename... Args, typename Mat>
-  constexpr void ConstructorDiagonal(Mat &Matrix, Args &...args) {
-    static_assert(HasMember<Mat>::Value, "1st value isnt a Matrix");
+  constexpr void ConstructorDiagonal(Mat &Matrix, Args &&...args) {
+    static_assert(HasMember<Mat>{}, "1st value isnt a Matrix");
     static_assert((sizeof(Matrix.mat) / sizeof(T)) /
                           (sizeof(Matrix.mat[0][0]) / sizeof(T)) !=
                       sizeof(Matrix.mat[0][0]) / sizeof(T),
@@ -82,20 +67,26 @@ protected:
     }
   };
   template <typename... Args, typename Mat>
-  constexpr void ConstructorBlock(Mat &Matrix, Args &...args) {
-    static_assert(HasMember<Mat>::Value, "1st value isnt a Matrix");
-    // make the next HasMember into Hasmember of vec/numeric instead of
-    // Hasmember of the matrix as it was.
-    if (sizeof...(args) > 4) { // here) {
+  constexpr void ConstructorBlock(Mat &Matrix, Args &&...args) {
+    static_assert(HasMember<Mat>{}, "1st value isnt a Matrix");
+    if (sizeof...(args) > 4 && !HasMember<decltype(((args), ...))>{}) {
       for (size_t i = 0; i < (sizeof(Matrix.mat) / sizeof(T)) /
                                  (sizeof(Matrix.mat[0]) / sizeof(T));
            i++) {
+        // float,int,double && args > 4
         size_t j = 0;
         ((Matrix.mat[0][j++] = std::forward<Args>(args)), ...);
       }
       return;
-      // dont forget this if too
-    } else if (sizeof...(args) > 4 && !HasMember<Mat>::Value) {
+    } else if (sizeof...(args) > 4 && HasMember<decltype(((args), ...))>{}) {
+      for (size_t i = 0; i < (sizeof(Matrix.mat) / sizeof(T)) /
+                                 (sizeof(Matrix.mat[0]) / sizeof(T));
+           i++) {
+        // vec2,vec3,vec4 && args > 4
+        size_t j = 0;
+        // FIX Matrix.mat[0][j++] = ((std::forward<Args>(args)), ...)[j];
+        return;
+      }
     }
     for (size_t i = 0; i < (sizeof(Matrix.mat) / sizeof(T)) /
                                (sizeof(Matrix.mat[0]) / sizeof(T));
@@ -105,21 +96,21 @@ protected:
     }
   };
   template <typename... Args, typename Mat>
-  constexpr void ConstructorVector(Mat &Matrix, Args &...args) {
-    static_assert(HasMember<Mat>::Value, "1st value isnt a Matrix");
+  constexpr void ConstructorVector(Mat &Matrix, Args &&...args) {
+    static_assert(HasMember<Mat>{}, "1st value isnt a Matrix");
     for (size_t i = 0; i < (sizeof(Matrix.mat) / sizeof(T)) /
                                (sizeof(Matrix.mat[0]) / sizeof(T));
          i++) {
       for (size_t j = 0; j < sizeof(Matrix.mat[0]) / sizeof(T); j++) {
-        // Matrix.mat[i][j] = ((std::forward<Args>(args)), ...)[j];
+        Matrix.mat[i][j] = ((std::forward<Args>(args)), ...)[j];
       }
     }
   };
   template <typename... Args, typename Mat>
   constexpr void ConstructorMatrix(Mat &Matrix, Args &...args) {
-    static_assert(HasMember<Mat>::Value, "1st value isnt a Matrix");
-    static_assert(HasMember<decltype(((args), ...))>::Value,
-                  "Args arent a Matrix");
+    static_assert(HasMember<Mat>{}, "1st value isnt a Matrix");
+    static_assert(HasMember<decltype(((args), ...))>{},
+                  "Args arent a Matrix nor Vector");
   }
 };
 } // namespace
@@ -190,8 +181,9 @@ public:
       return x;
     case 1:
       return y;
+    default:
+      throw std::runtime_error("Index out of range");
     }
-    return nullptr;
   }
 
   const T operator[](const int index) const {
@@ -200,10 +192,12 @@ public:
       return x;
     case 1:
       return y;
+    default:
+      throw std::runtime_error("Index out of range");
     }
-    return nullptr;
   }
 
+public:
   union {
     struct {
       T x, y;
@@ -266,8 +260,9 @@ public:
       return y;
     case 2:
       return z;
+    default:
+      throw std::runtime_error("Index out of range");
     }
-    return nullptr;
   }
 
   const T operator[](const int index) const {
@@ -278,10 +273,12 @@ public:
       return y;
     case 2:
       return z;
+    default:
+      throw std::runtime_error("Index out of range");
     }
-    return nullptr;
   }
 
+public:
   union {
     struct {
       T x, y, z;
@@ -363,8 +360,9 @@ public:
       return z;
     case 3:
       return w;
+    default:
+      throw std::runtime_error("Index out of range");
     }
-    return static_cast<T>(0.0);
   }
   const T operator[](const int index) const {
     switch (index) {
@@ -376,10 +374,12 @@ public:
       return z;
     case 3:
       return w;
+    default:
+      throw std::runtime_error("Index out of range");
     };
-    return static_cast<T>(0.0);
   }
 
+public:
   union {
     struct {
       T x, y, z, w;
@@ -401,7 +401,12 @@ private:
 };
 template <typename T> class Matrix3x3 : public Matrix<T> { // TODO
 public:
-  // static_assert(std::is_arithmetic<T>::value, "Matrix only accepts numbers");
+  static_assert(
+      std::is_arithmetic<T>::value || std::is_same<T, Vec2<T>>::value ||
+          std::is_same<T, Vec3<T>>::value || std::is_same<T, Vec4<T>>::value ||
+          std::is_same<T, Matrix3x3<T>>::value,
+      "Matrix only accepts numbers/vectors/matrix(with lower/same size)");
+
   template <typename... Args> Matrix3x3([[maybe_unused]] Args &&...args) {
     this->template ConstructorBlock(*this, (args)...);
   }
@@ -496,6 +501,7 @@ public:
     return X;
   }
 
+public:
   union {
     struct {
       T mat[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
@@ -519,7 +525,19 @@ private:
 template <typename T> class Matrix4x4 : public Matrix<T> {
 
 public:
-  // static_assert(std::is_arithmetic<T>::value, "Matrix only accepts numbers");
+  static_assert(std::is_arithmetic<T>::value ||
+                    std::is_same<T, Vec2<T>>::value ||
+                    std::is_same<T, Vec3<T>>::value ||
+                    std::is_same<T, Vec4<T>>::value ||
+                    std::is_same<T, Matrix3x3<T>>::value ||
+                    std::is_same<T, Matrix4x4<T>>::value,
+                "Matrix only accepts numbers/vectors/matrix");
+
+  /*
+   * Matrix4x4()
+   * @param TODO
+   * @note TODO
+   */
   template <typename... Args> Matrix4x4([[maybe_unused]] Args &&...args) {
     this->template ConstructorBlock(*this, (args)...);
   }
@@ -608,6 +626,7 @@ public:
 
   T determinant() {} // TODO
 
+public:
   union {
     struct {
       T mat[4][4] = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
