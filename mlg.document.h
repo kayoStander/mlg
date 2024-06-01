@@ -1,5 +1,5 @@
-#ifndef DOCUMENT
-#define DOCUMENT
+#ifndef MLGDOCUMENT
+#define MLGDOCUMENT
 
 //...
 
