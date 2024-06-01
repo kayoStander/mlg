@@ -12,7 +12,7 @@
 #include <type_traits>
 #include <utility>
 
-#if (MLGDOCUMENT)
+#if (DISABLEMLGDOCUMENT)
 #include "mlg.document.hpp"
 #endif
 
