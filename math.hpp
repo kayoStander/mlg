@@ -2,17 +2,18 @@
 
 /////////////////////////////////
 
-#include <cassert>
-#include <cctype>
+// #include <cassert>
+// #include <cctype>
 #include <cmath>
-#include <cstring>
-#include <iostream>
+// #include <cstring>
+// #include <iostream>
 #include <stdexcept>
 #include <stdint.h>
 #include <type_traits>
-#include <utility>
+// #include <type_traits>
+// #include <utility>
 
-#if (DISABLEMLGDOCUMENT)
+#if (MLGDOCUMENT)
 #include "mlg.document.hpp"
 #endif
 
@@ -65,13 +66,15 @@ protected:
                       std::extent<decltype(Matrix.mat[0])>::value,
                   "ConstructorDiagonal called on not same sized Matrix "
                   "(2x2,3x3,4x4;)");
+
     for (size_t i = 0; i < std::extent<decltype(Matrix.mat)>::value; i++) {
       ((Matrix.mat[i][i] = std::forward<Args>(args)), ...);
     }
   };
   template <typename... Args, typename Mat>
-  constexpr void ConstructorBlock(Mat &Matrix, Args &&...args) {
+  constexpr void Constructor(Mat &Matrix, Args &&...args) {
     static_assert(HasMemberMat<Mat>{}, "1st value isn't a Matrix");
+
     if (sizeof...(args) > 4 && !HasMemberX<decltype(((args), ...))>{} &&
         !HasMemberMat<decltype(((args), ...))>{}) {
       for (size_t i = 0; i < std::extent<decltype(Matrix.mat)>::value; i++) {
@@ -82,32 +85,42 @@ protected:
       return;
     } else if (sizeof...(args) > 4 && HasMemberX<decltype(((args), ...))>{} &&
                !HasMemberMat<decltype(((args), ...))>{}) {
+      std::common_type_t<Args...> array[sizeof...(args)] = {
+          std::forward<Args>(args)...};
       for (size_t i = 0; i < std::extent<decltype(Matrix.mat)>::value; i++) {
         // vec2,vec3,vec4 && args > 4
+        // FIX
         size_t j = 0;
-        // FIX Matrix.mat[0][j++] = ((std::forward<Args>(args)), ...)[j];
+        Matrix.mat[0][j++] = array[j];
         return;
       }
     } else if (sizeof...(args) > 4 && !HasMemberX<decltype(((args), ...))>{} &&
                HasMemberMat<decltype(((args), ...))>{}) {
-      // matrix2x2,matrix3x3,matrix4x4 && args > 4
-      // ...
+      std::common_type_t<Args...> array[sizeof...(args)] = {
+          std::forward<Args>(args)...};
+      for (size_t i = 0; i < std::extent<decltype(Matrix.mat)>::value; i++) {
+        // mat2x2,mat3x3,mat4x4 && args > 4
+        // FIX
+        size_t j = 0;
+        Matrix.mat[0][j++] = array[j];
+      }
       return;
     }
-    // args <= 4;
-    for (size_t i = 0; i < std::extent<decltype(Matrix.mat)>::value; i++) {
-      size_t j = 0;
-      ((Matrix.mat[i][j++] = std::forward<Args>(args)), ...);
-    }
-  };
-  template <typename... Args, typename Mat>
-  constexpr void ConstructorVector(Mat &Matrix, Args &&...args) {
-    static_assert(HasMemberMat<Mat>{}, "1st value isn't a Matrix");
-    static_assert(!HasMemberX<decltype(((args), ...))>{},
-                  "Arguments aren't have vectors");
-    for (size_t i = 0; i < std::extent<decltype(Matrix.mat)>::value; i++) {
-      size_t j = 0;
-      Matrix.mat[i][j++] = ((std::forward<Args>(args)), ...)[j];
+    if (!HasMemberMat<decltype(((args), ...))>{} &&
+        !HasMemberX<decltype(((args), ...))>{}) {
+      // float,int,double && args <= 4;
+      for (size_t i = 0; i < std::extent<decltype(Matrix.mat)>::value; i++) {
+        size_t j = 0;
+        ((Matrix.mat[i][j++] = std::forward<Args>(args)), ...);
+      }
+      return;
+    } else if (!HasMemberMat<decltype(((args), ...))>{} &&
+               HasMemberX<decltype(((args), ...))>{}) {
+      // vec2,vec3,vec4 && args <= 4;
+
+    } else if (HasMemberMat<decltype(((args), ...))>{} &&
+               !HasMemberX<decltype(((args), ...))>{}) {
+      // mat2,mat3,mat4 && args <= 4;
     }
   };
 };
@@ -478,6 +491,11 @@ public:
       }
     }
   };
+  template <typename Mat,
+            typename = std::enable_if<HasMemberMat<Mat>::value, void>>
+  void operator*(const Mat Matrix) {
+    // matrix multiplication
+  };
   void operator/(const T scalar) {
     if (world) {
       for (uint8_t i = 0; i < 3; i++) {
@@ -532,7 +550,7 @@ public:
    * @note TODO
    */
   template <typename... Args> Matrix4x4(Args &&...args) {
-    this->template ConstructorBlock(*this, (args)...);
+    this->template Constructor(*this, (args)...);
   }
   void sqrt() {
     if (world) {
@@ -576,6 +594,11 @@ public:
         mat[i][j] += value;
       }
     }
+  };
+  template <typename Mat,
+            typename = std::enable_if<HasMemberMat<Mat>::value, void>>
+  void operator*(const Mat Matrix) {
+    // matrix multiplication
   };
   void operator-(const T value) {
     if (world) {
