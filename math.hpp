@@ -2,16 +2,10 @@
 
 /////////////////////////////////
 
-// #include <cassert>
-// #include <cctype>
 #include <cmath>
-// #include <cstring>
-// #include <iostream>
-#include <stdexcept>
 #include <stdint.h>
 #include <type_traits>
-// #include <type_traits>
-// #include <utility>
+#include <utility>
 
 #if (MLGDOCUMENT)
 #include "mlg.document.hpp"
@@ -37,25 +31,44 @@ public:
   virtual void operator+(const T value) {};
   virtual void operator-(const T value) {};
   virtual void operator*(const T scalar) {};
+  template <typename Vec,
+            typename = std::enable_if<HasMemberX<Vec>::value, void>>
+  void operator*(const Vec Matrix) {};
   virtual void operator/(const T scalar) {};
-  virtual T operator[](const int index) { return T(0.0); };
-  virtual const T operator[](const int index) const { return T(0.0); };
+
+  /*union {
+    T vec[typename S];
+  };*/
 
 private:
 protected:
   virtual ~Vector(){};
+
+  template <typename... Args, typename Vec>
+  constexpr void Constructor(Vec &Vector, Args &&...args) {
+    // TODO
+  }
 };
 template <class T> class Matrix {
 public:
-  virtual void sqrt() {};
-  virtual void pow(const int32_t scalar) {};
-  virtual void operator+(const T value) {};
-  virtual void operator-(const T value) {};
-  virtual void operator*(const T scalar) {};
-  virtual void operator/(const T scalar) {};
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
+  void sqrt() {};
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
+  void pow(const int32_t scalar) {};
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
+  void operator+(const T value) {};
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
+  void operator-(const T value) {};
+
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
+  void operator*(const T scalar) {};
+  template <typename Mat, typename = std::enable_if<HasMemberMat<Mat>{}, void>>
+  void operator*(const Mat Matrix) {};
+
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
+  void operator/(const T scalar) {};
 
   virtual T Determinant() { return T(0.0); };
-  virtual const T Determinant() const { return T(0.0); };
 
 private:
 protected:
@@ -67,60 +80,69 @@ protected:
                   "ConstructorDiagonal called on not same sized Matrix "
                   "(2x2,3x3,4x4;)");
 
+    if constexpr (HasMemberX<decltype(((args), ...))>{}) {
+      for (size_t i = 0; i < std::extent<decltype(Matrix.mat)>::value; i++) {
+        size_t j = 0;
+        Matrix.mat[0][j++] =
+            ((std::forward<std::decay_t<Args>>(args)), ...).vec[j - 1];
+      }
+      return;
+    } else if constexpr (HasMemberMat<decltype(((args), ...))>{}) {
+      for (size_t i = 0; i < std::extent<decltype(Matrix.mat)>::value; i++) {
+        size_t j = 0;
+        Matrix.mat[0][j++] =
+            ((std::forward<std::decay_t<Args>>(args)), ...).mat[0][j - 1];
+      }
+      return;
+    }
     for (size_t i = 0; i < std::extent<decltype(Matrix.mat)>::value; i++) {
-      ((Matrix.mat[i][i] = std::forward<Args>(args)), ...);
+      Matrix.mat[i][i] = ((std::forward<std::decay_t<Args>>(args)), ...);
     }
   };
   template <typename... Args, typename Mat>
   constexpr void Constructor(Mat &Matrix, Args &&...args) {
     static_assert(HasMemberMat<Mat>{}, "1st value isn't a Matrix");
 
-    if (sizeof...(args) > 4 && !HasMemberX<decltype(((args), ...))>{} &&
-        !HasMemberMat<decltype(((args), ...))>{}) {
+    if constexpr (sizeof...(args) > 4 &&
+                  !HasMemberX<decltype(((args), ...))>{} &&
+                  !HasMemberMat<decltype(((args), ...))>{}) {
       for (size_t i = 0; i < std::extent<decltype(Matrix.mat)>::value; i++) {
-        // float,int,double && args > 4
-        size_t j = 0;
-        ((Matrix.mat[0][j++] = std::forward<Args>(args)), ...);
+        // float,int,double,... && args > 4
+        for (size_t j = 0; j < std::extent<decltype(Matrix.mat), 1>::value;
+             j++) {
+          ((Matrix.mat[0][j++] = std::forward<Args>(args)), ...);
+        }
       }
       return;
-    } else if (sizeof...(args) > 4 && HasMemberX<decltype(((args), ...))>{} &&
-               !HasMemberMat<decltype(((args), ...))>{}) {
-      std::common_type_t<Args...> array[sizeof...(args)] = {
-          std::forward<Args>(args)...};
+    } else if constexpr (!HasMemberMat<decltype(((args), ...))>{} &&
+                         HasMemberX<decltype(((args), ...))>{}) {
+      // vec2,vec3,vec4,... && args <= 4;
       for (size_t i = 0; i < std::extent<decltype(Matrix.mat)>::value; i++) {
         // vec2,vec3,vec4 && args > 4
-        // FIX
-        size_t j = 0;
-        Matrix.mat[0][j++] = array[j];
-        return;
+        for (size_t j = 0; j < std::extent<decltype(Matrix.mat), 1>::value;
+             j++) {
+          Matrix.mat[0][j] =
+              ((std::forward<std::decay_t<Args>>(args)), ...).vec[j];
+        }
       }
-    } else if (sizeof...(args) > 4 && !HasMemberX<decltype(((args), ...))>{} &&
-               HasMemberMat<decltype(((args), ...))>{}) {
-      std::common_type_t<Args...> array[sizeof...(args)] = {
-          std::forward<Args>(args)...};
-      for (size_t i = 0; i < std::extent<decltype(Matrix.mat)>::value; i++) {
-        // mat2x2,mat3x3,mat4x4 && args > 4
-        // FIX
-        size_t j = 0;
-        Matrix.mat[0][j++] = array[j];
+      return;
+    } else if constexpr (HasMemberMat<decltype(((args), ...))>{} &&
+                         !HasMemberX<decltype(((args), ...))>{}) {
+      // mat2,mat3,mat4,... && args <= 4;
+      for (size_t i = 0; i < std::extent<decltype(((args), ...))>::value; i++) {
+        for (size_t j = 0; j < std::extent<decltype(((args), ...)), 1>::value;
+             j++) {
+          Matrix.mat[i][j] =
+              ((std::forward<std::decay_t<Args>>(args)), ...).mat[i][j];
+        }
       }
       return;
     }
-    if (!HasMemberMat<decltype(((args), ...))>{} &&
-        !HasMemberX<decltype(((args), ...))>{}) {
-      // float,int,double && args <= 4;
-      for (size_t i = 0; i < std::extent<decltype(Matrix.mat)>::value; i++) {
-        size_t j = 0;
-        ((Matrix.mat[i][j++] = std::forward<Args>(args)), ...);
+    // float,int,double && args <= 4;
+    for (size_t i = 0; i < std::extent<decltype(Matrix.mat)>::value; i++) {
+      for (size_t j = 0; j < std::extent<decltype(Matrix.mat), 1>::value;) {
+        ((Matrix.mat[i][j] = std::forward<std::decay_t<Args>>(args)), ...);
       }
-      return;
-    } else if (!HasMemberMat<decltype(((args), ...))>{} &&
-               HasMemberX<decltype(((args), ...))>{}) {
-      // vec2,vec3,vec4 && args <= 4;
-
-    } else if (HasMemberMat<decltype(((args), ...))>{} &&
-               !HasMemberX<decltype(((args), ...))>{}) {
-      // mat2,mat3,mat4 && args <= 4;
     }
   };
 };
@@ -130,7 +152,6 @@ namespace Mlg {
 
 enum Constructor {
   MATRIXDIAGONAL = 0,
-  MATRIXVECTOR = 1,
   MATRIXBLOCK = 2,
 };
 
@@ -186,30 +207,11 @@ public:
     y /= scalar;
   }
 
-  T operator[](const int index) {
-    switch (index) {
-    case 0:
-      return x;
-    case 1:
-      return y;
-    default:
-      throw std::runtime_error("Index out of range");
-    }
-  }
-
-  const T operator[](const int index) const {
-    switch (index) {
-    case 0:
-      return x;
-    case 1:
-      return y;
-    default:
-      throw std::runtime_error("Index out of range");
-    }
-  }
-
 public:
   union {
+    struct {
+      T xy[2];
+    };
     struct {
       T x, y;
     };
@@ -263,34 +265,11 @@ public:
     z /= scalar;
   }
 
-  T operator[](const int index) {
-    switch (index) {
-    case 0:
-      return x;
-    case 1:
-      return y;
-    case 2:
-      return z;
-    default:
-      throw std::runtime_error("Index out of range");
-    }
-  }
-
-  const T operator[](const int index) const {
-    switch (index) {
-    case 0:
-      return x;
-    case 1:
-      return y;
-    case 2:
-      return z;
-    default:
-      throw std::runtime_error("Index out of range");
-    }
-  }
-
 public:
   union {
+    struct {
+      T xyz[3];
+    };
     struct {
       T x, y, z;
     };
@@ -359,39 +338,12 @@ public:
     z /= scalar;
     w /= scalar;
   }
-  T operator[](const int index) {
-    // return index < 4 ? *(T *)((char *)this + sizeof(T)) :
-    // static_cast<T>(0.0f);
-    switch (index) {
-    case 0:
-      return x;
-    case 1:
-      return y;
-    case 2:
-      return z;
-    case 3:
-      return w;
-    default:
-      throw std::runtime_error("Index out of range");
-    }
-  }
-  const T operator[](const int index) const {
-    switch (index) {
-    case 0:
-      return x;
-    case 1:
-      return y;
-    case 2:
-      return z;
-    case 3:
-      return w;
-    default:
-      throw std::runtime_error("Index out of range");
-    };
-  }
 
 public:
   union {
+    struct {
+      T xyzw[4];
+    };
     struct {
       T x, y, z, w;
     };
@@ -412,16 +364,18 @@ private:
 };
 template <class T> class Matrix3x3 : public Matrix<T> { // TODO
 public:
-  static_assert(
-      std::is_arithmetic<T>::value || std::is_same<T, Vec2<T>>::value ||
-          std::is_same<T, Vec3<T>>::value || std::is_same<T, Vec4<T>>::value ||
-          std::is_same<T, Matrix3x3<T>>::value,
-      "Matrix only accepts numbers/vectors/matrix(with lower/same size)");
+  static_assert(std::is_arithmetic<T>::value ||
+                    std::is_same<T, Vec2<T>>::value ||
+                    std::is_same<T, Vec3<T>>::value ||
+                    std::is_same<T, Vec4<T>>::value ||
+                    std::is_same<T, Matrix3x3<T>>::value,
+                "err");
 
   template <typename... Args> Matrix3x3(Args &&...args) {
     this->template ConstructorBlock(*this, (args)...);
   }
 
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
   void sqrt() {
     if (world) {
       for (uint8_t i = 0; i < 3; i++) {
@@ -435,23 +389,23 @@ public:
       }
     }
   };
+
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
   void pow(const int32_t scalar) {
     if (world) {
       for (uint8_t i = 0; i < 3; i++) {
-        for (uint8_t k = 0; k < scalar; k++) {
-          mat[i][i] *= mat[i][i];
-        }
+        // FIX
       }
       return;
     }
     for (uint8_t i = 0; i < 3; i++) {
       for (uint8_t j = 0; j < 3; j++) {
-        for (uint8_t k = 0; k < scalar; k++) {
-          mat[i][j] *= mat[i][j];
-        }
+        // FIX
       }
     }
   };
+
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
   void operator+(const T value) {
     if (world) {
       for (uint8_t i = 0; i < 3; i++) {
@@ -465,6 +419,8 @@ public:
       }
     }
   };
+
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
   void operator-(const T value) {
     if (world) {
       for (uint8_t i = 0; i < 3; i++) {
@@ -478,6 +434,8 @@ public:
       }
     }
   };
+
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
   void operator*(const T scalar) {
     if (world) {
       for (uint8_t i = 0; i < 3; i++) {
@@ -496,6 +454,8 @@ public:
   void operator*(const Mat Matrix) {
     // matrix multiplication
   };
+
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
   void operator/(const T scalar) {
     if (world) {
       for (uint8_t i = 0; i < 3; i++) {
@@ -536,22 +496,15 @@ private:
 template <class T> class Matrix4x4 : public Matrix<T> {
 
 public:
-  static_assert(std::is_arithmetic<T>::value ||
-                    std::is_same<T, Vec2<T>>::value ||
-                    std::is_same<T, Vec3<T>>::value ||
-                    std::is_same<T, Vec4<T>>::value ||
-                    std::is_same<T, Matrix3x3<T>>::value ||
-                    std::is_same<T, Matrix4x4<T>>::value,
+  static_assert(std::is_arithmetic<std::decay_t<T>>::value ||
+                    HasMemberX<std::decay_t<T>>{} ||
+                    HasMemberMat<std::decay_t<T>>{},
                 "Matrix only accepts numbers/vectors/matrix");
 
-  /*
-   * Matrix4x4()
-   * @param TODO
-   * @note TODO
-   */
   template <typename... Args> Matrix4x4(Args &&...args) {
     this->template Constructor(*this, (args)...);
   }
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
   void sqrt() {
     if (world) {
       for (uint8_t i = 0; i < 4; i++) {
@@ -565,23 +518,23 @@ public:
       }
     }
   };
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
   void pow(const int32_t scalar) {
     if (world) {
       for (uint8_t i = 0; i < 4; i++) {
-        for (uint32_t k = 0; k < scalar; k++) {
-          mat[i][i] *= mat[i][i];
+        for (uint8_t j = 0; j < 4; j++) {
+          // FIX
         }
       }
       return;
     }
     for (uint8_t i = 0; i < 4; i++) {
       for (uint8_t j = 0; j < 4; j++) {
-        for (uint32_t k = 0; k < scalar; k++) {
-          mat[i][i] *= mat[i][i];
-        }
+        // FIX
       }
     }
   };
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
   void operator+(const T value) {
     if (world) {
       for (uint8_t i = 0; i < 4; i++) {
@@ -600,6 +553,7 @@ public:
   void operator*(const Mat Matrix) {
     // matrix multiplication
   };
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
   void operator-(const T value) {
     if (world) {
       for (uint8_t i = 0; i < 4; i++) {
@@ -613,6 +567,7 @@ public:
       }
     }
   };
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
   void operator*(const T scalar) {
     if (world) {
       for (uint8_t i = 0; i < 4; i++) {
@@ -626,6 +581,7 @@ public:
       }
     }
   };
+  template <typename = std::enable_if<std::is_arithmetic<T>::value, void>>
   void operator/(const T scalar) {
     if (world) {
       for (uint8_t i = 0; i < 4; i++) {
