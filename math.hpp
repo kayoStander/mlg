@@ -96,9 +96,9 @@ public:
   T operator[](const int index) {
     switch (index) {
     case 0:
-      return x;
+      return x; break;
     case 1:
-      return y;
+      return y; break;
     }
     return nullptr;
   }
@@ -106,9 +106,9 @@ public:
   const T operator[](const int index) const {
     switch (index) {
     case 0:
-      return x;
+      return x; break;
     case 1:
-      return y;
+      return y; break;
     }
     return nullptr;
   }
@@ -170,11 +170,11 @@ public:
   T operator[](const int index) {
     switch (index) {
     case 0:
-      return x;
+      return x; break;
     case 1:
-      return y;
+      return y; break;
     case 2:
-      return z;
+      return z; break;
     }
     return nullptr;
   }
@@ -182,11 +182,11 @@ public:
   const T operator[](const int index) const {
     switch (index) {
     case 0:
-      return x;
+      return x; break;
     case 1:
-      return y;
+      return y; break;
     case 2:
-      return z;
+      return z; break;
     }
     return nullptr;
   }
@@ -266,26 +266,26 @@ public:
     // static_cast<T>(0.0f);
     switch (index) {
     case 0:
-      return x;
+      return x; break;
     case 1:
-      return y;
+      return y; break;
     case 2:
-      return z;
+      return z; break;
     case 3:
-      return w;
+      return w; break;
     }
     return static_cast<T>(0.0);
   }
   const T operator[](const int index) const {
     switch (index) {
     case 0:
-      return x;
+      return x; break;
     case 1:
-      return y;
+      return y; break;
     case 2:
-      return z;
+      return z; break;
     case 3:
-      return w;
+      return w; break;
     };
     return static_cast<T>(0.0);
   }
